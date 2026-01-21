@@ -32,10 +32,14 @@ public class GridSystem : MonoBehaviour
     public float mapSize;
     Tile[][] grid;
 
-    int[] selectedCel = { -1, -1 };
+    public int[] playerCell = { -1, -1 };
+
+
+    int[] selectedCell = { -1, -1 };
 
     Color tileColor = Color.red;
-
+    [SerializeField]
+    private Transform playerPos;
     public Camera mainCam;
     // Start is called before the first frame update
     void Start()
@@ -56,17 +60,24 @@ public class GridSystem : MonoBehaviour
                     grid[i][j].isTile = false;
                 //grid[i][j].isTile = true;
 
-
-
             }
         }
-    }
+        if (playerPos)
+            updatePlayercell();
 
+    }
+    public void updatePlayercell()
+    {
+        playerCell[0] = Mathf.RoundToInt(playerPos.position.z / tileSize);
+        playerCell[1] = Mathf.RoundToInt(playerPos.position.x / tileSize);
+        Vector3 tilePos = new Vector3(tileSize * (playerCell[1] + 1 / 2), playerPos.position.y, tileSize * (playerCell[0] + 1 / 2));
+        playerPos.position = tilePos;
+    }
     // Update is called once per frame
     void Update()
     {
-        if (selectedCel[0] != -1)
-            grid[selectedCel[0]][selectedCel[1]].state = TileState.Selected;
+        if (playerCell[0] != -1)
+            grid[playerCell[0]][playerCell[1]].state = TileState.Selected;
 
         for (int i = 0; i < gridSize; i++)
         {
@@ -92,7 +103,6 @@ public class GridSystem : MonoBehaviour
 
                     }
 
-
                 }
                 else
                     tileColor = Color.blue;
@@ -103,7 +113,7 @@ public class GridSystem : MonoBehaviour
         tileSelection();
     }
 
-    void tileSelection()
+    public Vector3 tileSelection()
     {
         if (Input.GetMouseButtonDown(0))
         {
@@ -112,17 +122,19 @@ public class GridSystem : MonoBehaviour
             if (Physics.Raycast(ray.origin, ray.direction, out hit, Mathf.Infinity))
             {
 
-                selectedCel[0] = Mathf.RoundToInt(hit.point.z / tileSize);
-                selectedCel[1] = Mathf.RoundToInt(hit.point.x / tileSize);
-
+                int i = selectedCell[0] = Mathf.RoundToInt(hit.point.z / tileSize);
+                int j = selectedCell[1] = Mathf.RoundToInt(hit.point.x / tileSize);
+                if (grid[i][j].state == TileState.Path)
+                {
+                    Vector3 tilePos = new Vector3(tileSize * (j + 1 / 2), playerPos.position.y, tileSize * (i + 1 / 2));
+                    return tilePos;
+                }
             }
-
-            pathMatrix(2, Paths.Vertical);
-
         }
+        return Vector3.up * 100f;
     }
 
-    void pathMatrix(int range, Paths path)
+    public void pathMatrix(int range, Paths path)
     {
         int dim = 2 * range + 1;
 
@@ -133,30 +145,30 @@ public class GridSystem : MonoBehaviour
         {
 
             case Paths.Vertical:
-                for (int i = selectedCel[0] - 2; i <= selectedCel[0] + 2; i++)
+                for (int i = playerCell[0] - 2; i <= playerCell[0] + 2; i++)
                 {
-                    if (i != selectedCel[0] && grid[i][selectedCel[1]].isTile)
-                        grid[i][selectedCel[1]].state = TileState.Path;
+                    if (i != playerCell[0] && grid[i][playerCell[1]].isTile)
+                        grid[i][playerCell[1]].state = TileState.Path;
 
                 }
                 break;
             case Paths.Horizontal:
-                for (int i = selectedCel[1] - 2; i <= selectedCel[1] + 2; i++)
+                for (int i = playerCell[1] - 2; i <= playerCell[1] + 2; i++)
                 {
-                    if (i != selectedCel[1] && grid[selectedCel[0]][i].isTile)
-                        grid[selectedCel[0]][i].state = TileState.Path;
+                    if (i != playerCell[1] && grid[playerCell[0]][i].isTile)
+                        grid[playerCell[0]][i].state = TileState.Path;
                 }
                 break;
 
             case Paths.Diagonal:
-                for (int i = selectedCel[0] - 2, j = selectedCel[1] - 2; i <= selectedCel[0] + 2; i++, j++)
+                for (int i = playerCell[0] - 2, j = playerCell[1] - 2; i <= playerCell[0] + 2; i++, j++)
                 {
                     if (i != range && grid[i][j].isTile)
                         grid[i][j].state = TileState.Path;
 
 
                 }
-                for (int i = selectedCel[0] - 2, j = selectedCel[1] + 2; i <= selectedCel[0] + 2; i++, j--)
+                for (int i = playerCell[0] - 2, j = playerCell[1] + 2; i <= playerCell[0] + 2; i++, j--)
                 {
                     if (i != range && grid[i][j].isTile)
                         grid[i][j].state = TileState.Path;
@@ -167,9 +179,9 @@ public class GridSystem : MonoBehaviour
         }
 
         string output = "";
-        for (int i = selectedCel[0] - 2; i < selectedCel[0] + 2; i++)
+        for (int i = playerCell[0] - 2; i < playerCell[0] + 2; i++)
         {
-            for (int j = selectedCel[0] - 2; j < selectedCel[0] + 2; j++)
+            for (int j = playerCell[0] - 2; j < playerCell[0] + 2; j++)
                 output += ((int)grid[i][j].state).ToString() + " ";
             output = output + "\n";
         }

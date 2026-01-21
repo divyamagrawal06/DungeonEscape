@@ -1,67 +1,169 @@
+
 using System.Collections;
 using System.Collections.Generic;
+
 using UnityEngine;
+using UnityEngine.UI;
+
+public enum PlayerState
+{
+    RollDie,
+    SelectDice,
+    Perform
+
+}
+
+public enum Abilities
+{
+    Attack,
+    Spell,
+    Heal
+}
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] private float moveSpeed = 2f;
-    [SerializeField] private Vector3 areaCenter = Vector3.zero;
-    [SerializeField] private Vector3 areaExtents = new Vector3(5f, 0f, 5f);
-    [SerializeField] private float targetReachThreshold = 0.1f;
-    [SerializeField] private float retargetInterval = 3f;
+    public bool playerTurn;
+    public PlayerState currentState;
+    [SerializeField]
+    private GameObject[] Die;
 
-    private Vector3 _currentTarget;
-    private float _nextRetargetTime;
-    private float _fixedY;
+    [SerializeField]
+    private GridSystem gridSystem;
 
-    void Awake()
+    Animator animator;
+
+    [SerializeField]
+    private float speed;
+    bool rolling;
+
+    float timer;
+
+    int actionType;
+
+    int moveDice;
+    int abilityDice;
+
+    Vector3 target = Vector3.up * 100f;
+    void Start()
     {
-        _fixedY = transform.position.y;
-        PickNewTarget();
-        _nextRetargetTime = Time.time + retargetInterval;
+        foreach (GameObject Dice in Die)
+            Dice.GetComponentInChildren<Button>().enabled = false;
+
+        animator = GetComponent<Animator>();
     }
 
     void Update()
     {
-        if (Time.time >= _nextRetargetTime || IsAtTarget())
+        if (playerTurn)
         {
-            PickNewTarget();
-            _nextRetargetTime = Time.time + retargetInterval;
+            switch (currentState)
+            {
+                case PlayerState.RollDie:
+                    RollDie();
+                    break;
+                case PlayerState.SelectDice:
+                    SelectDice();
+                    break;
+                case PlayerState.Perform:
+                    Perform();
+                    break;
+            }
+        }
+    }
+
+    void RollDie()
+    {
+
+        if (timer > 0f)
+        {
+            timer -= Time.deltaTime;
+            Debug.Log(timer);
+        }
+        else
+        {
+            if (rolling)
+            {
+                foreach (GameObject Dice in Die)
+                {
+                    Dice.GetComponent<Animator>().SetBool("roll", false);
+                    Dice.GetComponentInChildren<Button>().enabled = true;
+                }
+                moveDice = Random.Range(0, 3);
+                abilityDice = Random.Range(0, 3);
+                currentState = PlayerState.SelectDice;
+                rolling = false;
+            }
         }
 
-        MoveTowardsTarget();
-    }
 
-    private void MoveTowardsTarget()
+    }
+    void SelectDice()
     {
-        Vector3 direction = (_currentTarget - transform.position).normalized;
-        Vector3 step = direction * moveSpeed * Time.deltaTime;
 
-        // Keep Y locked to the initial height.
-        Vector3 nextPosition = transform.position + step;
-        nextPosition.y = _fixedY;
-        transform.position = nextPosition;
     }
-
-    private bool IsAtTarget()
+    void Perform()
     {
-        Vector3 flatPosition = new Vector3(transform.position.x, _fixedY, transform.position.z);
-        return Vector3.Distance(flatPosition, _currentTarget) <= targetReachThreshold;
+        if (actionType == 0)
+        {
+
+
+            if (target != Vector3.up * 100f)
+            {
+                if (transform.position != target)
+                    transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+                else
+                {
+                    currentState = PlayerState.RollDie;
+                    gridSystem.updatePlayercell();
+                    target = Vector3.up * 100f;
+                    animator.SetInteger("type", -1);
+                }
+
+
+            }
+            else
+            {
+                gridSystem.pathMatrix(2, (Paths)moveDice);
+                target = gridSystem.tileSelection();
+                if (target != Vector3.up * 100f)
+                {
+                    animator.SetInteger("type", 0);
+                    animator.SetTrigger("perform");
+                }
+            }
+
+
+        }
+        else
+        {
+            animator.SetInteger("type", 1);
+            animator.SetTrigger("perform");
+            animator.SetInteger("action", abilityDice);
+            currentState = PlayerState.RollDie;
+
+        }
     }
 
-    private void PickNewTarget()
+    public void roll()
     {
-        float x = Random.Range(areaCenter.x - areaExtents.x, areaCenter.x + areaExtents.x);
-        float z = Random.Range(areaCenter.z - areaExtents.z, areaCenter.z + areaExtents.z);
-        _currentTarget = new Vector3(x, _fixedY, z);
+        if (currentState == PlayerState.RollDie)
+        {
+            foreach (GameObject Dice in Die)
+                Dice.GetComponent<Animator>().SetBool("roll", true);
+            rolling = true;
+            timer = 5f;
+        }
+    }
+    public void selectDice(int type)
+    {
+        actionType = type;
+        currentState = PlayerState.Perform;
     }
 
-    void OnDrawGizmosSelected()
+    public void AbilityEffect()
     {
-        Gizmos.color = Color.cyan;
-        Vector3 center = new Vector3(areaCenter.x, Application.isPlaying ? _fixedY : transform.position.y, areaCenter.z);
-        Vector3 size = new Vector3(areaExtents.x * 2f, 0.05f, areaExtents.z * 2f);
-        Gizmos.DrawWireCube(center, size);
-        Gizmos.DrawSphere(_currentTarget, 0.1f);
+        animator.SetInteger("type", -1);
+
     }
+
 }
