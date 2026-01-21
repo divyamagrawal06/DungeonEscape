@@ -154,7 +154,13 @@ MonoBehaviour:
   rollButton: {fileID: 471071392}
   movementDiceImage: {fileID: 1137934722}
   actionDiceImage: {fileID: 1739957835}
-  diceFaces: []
+  diceFaces:
+  - {fileID: 21300000, guid: 2d0dd9f39bf374a4d9b135a9b7f43999, type: 3}
+  - {fileID: 21300000, guid: 0b142c855506f914591b9dd09fc020a3, type: 3}
+  - {fileID: 21300000, guid: d34f3a4e526962946a91dd394e94965b, type: 3}
+  - {fileID: 21300000, guid: b43250db11099784a83f54f3b9e63591, type: 3}
+  - {fileID: 21300000, guid: 0a43cdf8fa15772498aaa2d69061c1f3, type: 3}
+  - {fileID: 21300000, guid: 3bcc8520bfde8a249810acdcd3ad7043, type: 3}
   rollDuration: 1
   spinInterval: 0.08
 --- !u!4 &110082649
@@ -864,7 +870,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!223 &2017359819
 Canvas:
   m_ObjectHideFlags: 0

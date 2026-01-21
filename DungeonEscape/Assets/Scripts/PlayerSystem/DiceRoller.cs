@@ -50,7 +50,7 @@ namespace PlayerSystem
 
             for (int i = 0; i < 6; i++)
             {
-                diceFaces[i] = Resources.Load<Sprite>($"DiceFaces/{faceNames[i]}");
+                diceFaces[i] = Resources.Load<Sprite>("$Art/NapoleansDice/{faceNames[i]}");
                 if (diceFaces[i] == null)
                 {
                     Debug.LogWarning($"[DiceRoller] Could not load sprite: DiceFaces/{faceNames[i]}");
